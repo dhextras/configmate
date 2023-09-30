@@ -1,0 +1,9 @@
+#!/bin/bash
+
+rm -rf /usr/share/configmate_conf
+rm -rf $HOME/.configmate_conf
+
+rm -f /usr/bin/cfm
+rm -f /usr/bin/configmate
+
+exit 0

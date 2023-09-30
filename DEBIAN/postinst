@@ -1,0 +1,6 @@
+#!/bin/bash
+
+rm -f /usr/bin/cfm
+ln -s /usr/bin/configmate /usr/bin/cfm
+
+exit 0

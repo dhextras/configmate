@@ -1,0 +1,125 @@
+#!/bin/bash
+
+CONF_FILE="$HOME/.configmate_conf/configmate.conf"
+
+# Create the config file if it doesn't exist
+if [ ! -f "$CONF_FILE" ]; then
+    mkdir "$HOME/.configmate_conf"
+    touch "$CONF_FILE"
+fi
+
+display_help() {
+    echo "Usage: $(basename "$0") [-h] [-w <key> <value>] [-r <key>] [-d <key>] [-c <key>] [-l]"
+    echo
+    echo "Options:"
+    echo "  -h               Display this help message"
+    echo "  -w <key> <value> Write or edit a key with a value"
+    echo "  -r <key>         Read a key's value"
+    echo "  -d <key>         Delete the key and its value"
+    echo "  -c <key>         Copy a key's value to clipboard"
+    echo "  -l               List all keys"
+    echo
+    echo "For issues or inquiries, please contact Dhextras at mohammedsafki27@gmail.com."
+}
+
+delete_key() {
+    key=$1
+
+    if grep -q "^$key=" "$CONF_FILE"; then
+        sed -i "/^$key=/d" "$CONF_FILE"
+        echo "Key '$key' deleted."
+    else
+        echo "Key '$key' not found."
+    fi
+}
+
+read_key() {
+    key=$1
+
+    value=$(grep "^$key=" "$CONF_FILE" | cut -d= -f2-)
+    if [ -n "$value" ]; then
+        echo "Value for '$key': $value"
+    else
+        echo "Key '$key' not found."
+    fi
+}
+
+write_or_edit_key() {
+    key=$1
+    value=$2
+
+    if [ -z "$key" ] || [ -z "$value" ]; then
+        echo "Value not provided..  Usage: $(basename "$0") [-w <key> <value>]"
+    else
+        if grep -q "^$key=" "$CONF_FILE"; then
+            sed "/^$key=/c$key=$value" "$CONF_FILE" > /dev/null 2>&1
+            echo "Key '$key' edited."
+        else
+            echo "$key=$value" >> "$CONF_FILE"
+            echo "Key '$key' added."
+        fi
+    fi
+}
+
+copy_key_to_clipboard() {
+    key=$1
+
+    value=$(grep "^$key=" "$CONF_FILE" | cut -d= -f2-)
+    if [ -n "$value" ]; then
+        echo -n "$value" | xclip -selection clipboard
+        echo "Copied value of '$key' to clipboard."
+    else
+        echo "Key '$key' not found."
+    fi
+}
+
+list_keys() {
+    keys=$(cut -d= -f1 "$CONF_FILE")
+    echo "Keys:"
+    echo "$keys"
+}
+
+# Options
+if [ "$#" -eq 0 ]; then
+    display_help
+    exit 1
+fi
+
+while getopts ":d:r:w:c:lh" opt; do
+    case $opt in
+    d)
+        delete_key "$OPTARG"
+        exit 0
+        ;;
+    r)
+        read_key "$OPTARG"
+        exit 0
+        ;;
+    w)
+        write_or_edit_key "$OPTARG" "${@:OPTIND:1}"
+        exit 0
+        ;;
+    c)
+        copy_key_to_clipboard "$OPTARG"
+        exit 0
+        ;;
+    l)
+        list_keys
+        exit 0
+        ;;
+    h)
+        display_help
+        exit 0
+        ;;
+    \?)
+        echo "Invalid option: -$OPTARG"
+        display_help
+        exit 1
+        ;;
+    esac
+
+    if [ -z $2 ]; then
+        echo "Key not provided..  Usage: $(basename "$0") [<option> <key>]"
+        exit 0
+    fi
+done
